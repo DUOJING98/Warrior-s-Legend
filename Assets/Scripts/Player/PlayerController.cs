@@ -10,18 +10,28 @@ public class PlayerController : MonoBehaviour
     public InputSystem_Actions action;
     private PhysicsCheck physicsCheck;
     public Vector2 inputDirection;
+    private CapsuleCollider2D capsuleCollider;
 
     [Header("基本")]
     public float Speed;
     public float jumpForce;
     private float runspeed;
     private float walkspeed => Speed / 2.5f;
+    public bool isCrouch;
+    private Vector2 originalOffset;
+    private Vector2 originalSize;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         action = new InputSystem_Actions();
         physicsCheck = GetComponent<PhysicsCheck>();
+        capsuleCollider = GetComponent<CapsuleCollider2D>();
+        //元のサイズを取得
+        originalOffset = capsuleCollider.offset;
+        originalSize = capsuleCollider.size;
+        //元のスビートを取得
         runspeed = Speed;
+
         //歩く
         #region
         action.Player.Jump.started += Jump;
@@ -65,7 +75,8 @@ public class PlayerController : MonoBehaviour
     private void Move()
     {
         //移動
-        rb.linearVelocity = new Vector2(inputDirection.x * Speed * Time.deltaTime, rb.linearVelocity.y);
+        if (!isCrouch)
+            rb.linearVelocity = new Vector2(inputDirection.x * Speed * Time.deltaTime, rb.linearVelocity.y);
         //反転
         int faceDir = (int)transform.localScale.x;
         if (inputDirection.x > 0)
@@ -73,6 +84,22 @@ public class PlayerController : MonoBehaviour
         if (inputDirection.x < 0)
             faceDir = -1;
         transform.localScale = new Vector3(faceDir, 1, 1);
+
+        //しゃがむ
+        isCrouch = inputDirection.y < -0.5f && physicsCheck.isGround;
+        if (isCrouch)
+        {
+            //コライダーのサイズを小さくする
+            capsuleCollider.offset = new Vector2(-0.05f, 0.85f);
+            capsuleCollider.size = new Vector2(0.7f, 1.7f);
+        }
+        else
+        {
+            //コライダーのサイズを戻る
+            capsuleCollider.size = originalSize;
+            capsuleCollider.offset = originalOffset;
+        }
+
     }
     private void Jump(InputAction.CallbackContext context)
     {
