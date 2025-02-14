@@ -20,6 +20,10 @@ public class PlayerController : MonoBehaviour
     public bool isCrouch;
     private Vector2 originalOffset;
     private Vector2 originalSize;
+    public bool isHurt;
+    public float hurtForce;
+    public bool isDead;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -69,10 +73,11 @@ public class PlayerController : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        Move();
+        if (!isHurt)
+            Move();
     }
 
-  
+
 
     private void Move()
     {
@@ -112,7 +117,19 @@ public class PlayerController : MonoBehaviour
 
         }
     }
+    public void GetHurt(Transform attack)
+    {
+        isHurt = true;
+        rb.linearVelocity = Vector2.zero;
+        Vector2 dir = new Vector2((transform.position.x - attack.position.x), 0).normalized;
 
+        rb.AddForce(dir * hurtForce, ForceMode2D.Impulse);
+    }
 
+    public void PlayerDead()
+    {
+        isDead=true;
+        action.Player.Disable();
+    }
 
 }
