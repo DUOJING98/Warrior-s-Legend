@@ -14,12 +14,31 @@ public class PlayerController : MonoBehaviour
     [Header("»ù±¾")]
     public float Speed;
     public float jumpForce;
+    private float runspeed;
+    private float walkspeed => Speed / 2.5f;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         action = new InputSystem_Actions();
         physicsCheck = GetComponent<PhysicsCheck>();
+        runspeed = Speed;
+        //ši¤¯
+        #region
         action.Player.Jump.started += Jump;
+        //£ã£ô£ø£½CallbackContext
+        action.Player.Sprint.performed += ctx =>
+        {
+            //¥Ü¥¿¥ó¤òÑº¤·¤Æ¤¤¤ëég¡¢ši¤¯
+            if (physicsCheck.isGround)
+                Speed = walkspeed;
+        };
+        action.Player.Sprint.canceled += ctx =>
+        {
+            //¥Ü¥¿¥ó¤¬ëx¤ì¤¿¤È¤­¡¢×ß¤ë
+            if (physicsCheck.isGround)
+                Speed = runspeed;
+        };
+        #endregion
     }
 
 
