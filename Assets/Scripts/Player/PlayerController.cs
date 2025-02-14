@@ -132,4 +132,12 @@ public class PlayerController : MonoBehaviour
         action.Player.Disable();
     }
 
+    private void CheckState()
+    {
+        if (!isDead)
+            gameObject.layer = LayerMask.NameToLayer("Enemy");
+        else
+            gameObject.layer = LayerMask.NameToLayer("Player");
+            
+    }
 }
