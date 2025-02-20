@@ -10,29 +10,36 @@ public class PlayerController : MonoBehaviour
     public InputSystem_Actions action;
     private PhysicsCheck physicsCheck;
     public Vector2 inputDirection;
-    private CapsuleCollider2D capsuleCollider;
+    private CapsuleCollider2D coll;
+    private PlayerAnimation playerAnim;
 
     [Header("基本")]
     public float Speed;
     public float jumpForce;
     private float runspeed;
     private float walkspeed => Speed / 2.5f;
-    public bool isCrouch;
     private Vector2 originalOffset;
     private Vector2 originalSize;
+    [Header("マテリアル")]
+    public PhysicsMaterial2D Normal;
+    public PhysicsMaterial2D Wall;
+    [Header("状態")]
+    public bool isCrouch;
     public bool isHurt;
     public float hurtForce;
     public bool isDead;
+    public bool isAttack;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         action = new InputSystem_Actions();
         physicsCheck = GetComponent<PhysicsCheck>();
-        capsuleCollider = GetComponent<CapsuleCollider2D>();
+        coll = GetComponent<CapsuleCollider2D>();
+        playerAnim = GetComponent<PlayerAnimation>();
         //元のサイズを取得
-        originalOffset = capsuleCollider.offset;
-        originalSize = capsuleCollider.size;
+        originalOffset = coll.offset;
+        originalSize = coll.size;
         //元のスビートを取得
         runspeed = Speed;
 
@@ -53,6 +60,9 @@ public class PlayerController : MonoBehaviour
                 Speed = runspeed;
         };
         #endregion
+
+        //攻撃
+        action.Player.Attack.started += PlayerAttack;
     }
 
 
@@ -70,10 +80,12 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         inputDirection = action.Player.Move.ReadValue<Vector2>();
+        CheckState();
     }
+
     private void FixedUpdate()
     {
-        if (!isHurt)
+        if (!isHurt && !isAttack)
             Move();
     }
 
@@ -97,14 +109,14 @@ public class PlayerController : MonoBehaviour
         if (isCrouch)
         {
             //コライダーのサイズを小さくする
-            capsuleCollider.offset = new Vector2(-0.05f, 0.85f);
-            capsuleCollider.size = new Vector2(0.7f, 1.7f);
+            coll.offset = new Vector2(-0.05f, 0.85f);
+            coll.size = new Vector2(0.7f, 1.7f);
         }
         else
         {
             //コライダーのサイズを戻る
-            capsuleCollider.size = originalSize;
-            capsuleCollider.offset = originalOffset;
+            coll.size = originalSize;
+            coll.offset = originalOffset;
         }
 
     }
@@ -117,6 +129,14 @@ public class PlayerController : MonoBehaviour
 
         }
     }
+
+    private void PlayerAttack(InputAction.CallbackContext context)
+    {
+        playerAnim.PlayerAttack();
+        isAttack = true;
+    }
+
+    #region UnityEvent
     public void GetHurt(Transform attack)
     {
         isHurt = true;
@@ -128,16 +148,19 @@ public class PlayerController : MonoBehaviour
 
     public void PlayerDead()
     {
-        isDead=true;
+        isDead = true;
         action.Player.Disable();
     }
+    #endregion
 
     private void CheckState()
     {
-        if (!isDead)
+        if (isDead)
             gameObject.layer = LayerMask.NameToLayer("Enemy");
         else
             gameObject.layer = LayerMask.NameToLayer("Player");
-            
+
+        //マテリアル
+        coll.sharedMaterial = physicsCheck.isGround ? Normal : Wall;
     }
 }
